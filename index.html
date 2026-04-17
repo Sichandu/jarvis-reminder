@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>J.A.R.V.I.S · Intelligent Reminder System</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00e0ff">
+
+
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
   * {
@@ -906,6 +911,17 @@
     if (document.getElementById('custom-date')) document.getElementById('custom-date').value = today;
     if (document.getElementById('manual-custom-date')) document.getElementById('manual-custom-date').value = today;
   };
+</script>
+
+<script>
+// ✅ SERVICE WORKER REGISTER
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js")
+      .then(() => console.log("PWA Ready 🚀"))
+      .catch(err => console.log("SW failed", err));
+  });
+}
 </script>
 </body>
 </html>
