@@ -923,5 +923,32 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+
+<script>
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+
+  const installBtn = document.createElement("button");
+  installBtn.innerText = "🚀 INSTALL JARVIS";
+  installBtn.style.position = "fixed";
+  installBtn.style.bottom = "20px";
+  installBtn.style.left = "50%";
+  installBtn.style.transform = "translateX(-50%)";
+  installBtn.style.padding = "12px 20px";
+  installBtn.style.zIndex = "9999";
+
+  document.body.appendChild(installBtn);
+
+  installBtn.onclick = () => {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+    });
+  };
+});
+</script>
 </body>
 </html>
