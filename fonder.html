@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>J.A.R.V.I.S · Founder Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --cyan: #00e0ff;
+    --cyan-dim: rgba(0,224,255,0.15);
+    --bg: #050b14;
+    --panel: rgba(8, 18, 28, 0.9);
+    --text: #e0f2fe;
+    --border: rgba(0,224,255,0.3);
+    --danger: #ff4466;
+    --success: #00ffaa;
+    --gold: #ffcc44;
+  }
+  body {
+    background: radial-gradient(circle at 20% 30%, #0a111f, #03070f);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    padding: 1rem;
+    min-height: 100vh;
+  }
+  .container { max-width: 1100px; margin: 0 auto; width: 100%; }
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .admin-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1rem, 5vw, 1.3rem);
+    color: var(--cyan);
+    letter-spacing: 0.2em;
+  }
+  .back-link {
+    color: var(--text);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 0.4rem 1rem;
+    border-radius: 40px;
+    transition: 0.2s;
+  }
+  .back-link:hover { border-color: var(--cyan); color: var(--cyan); }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .stat-num { font-family: 'Orbitron', monospace; font-size: 2rem; color: var(--cyan); }
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .filter-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.4rem 1rem;
+    font-family: 'Orbitron', monospace;
+    cursor: pointer;
+    border-radius: 40px;
+    transition: 0.2s;
+  }
+  .filter-btn.active, .filter-btn:hover { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+  .reminder-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    margin-bottom: 1.2rem;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 0.8rem 1rem;
+    background: rgba(0,224,255,0.05);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .user-info { font-weight: bold; }
+  .user-phone { font-size: 0.7rem; color: var(--gold); margin-left: 0.5rem; }
+  .reminder-text { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 1rem; }
+  .snippet-box, .whatsapp-box {
+    padding: 0.8rem 1rem;
+    background: rgba(0,0,0,0.3);
+    font-family: monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border-bottom: 1px solid var(--border);
+  }
+  .whatsapp-box { background: rgba(0,255,170,0.05); border-left: 3px solid #25D366; }
+  .card-footer {
+    padding: 0.6rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .btn-copy, .btn-delete {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.3rem 1rem;
+    cursor: pointer;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    border-radius: 40px;
+    transition: 0.2s;
+  }
+  .btn-copy:hover { border-color: var(--success); color: var(--success); }
+  .btn-delete:hover { border-color: var(--danger); color: var(--danger); }
+  .empty-msg { text-align: center; padding: 3rem; color: var(--text); border: 1px dashed var(--border); border-radius: 20px; }
+  .copy-all-btn {
+    width: 100%;
+    padding: 0.8rem;
+    background: transparent;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: 'Orbitron', monospace;
+    margin-bottom: 1.5rem;
+    cursor: pointer;
+    border-radius: 40px;
+    transition: 0.2s;
+  }
+  .copy-all-btn:hover { background: var(--cyan-dim); }
+  .badge {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--cyan-dim);
+    display: inline-block;
+  }
+  @media (max-width: 600px) {
+    .card-header { flex-direction: column; }
+    .card-footer { flex-direction: column; align-items: stretch; }
+    .btn-copy, .btn-delete { text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="admin-header">
+    <div class="admin-title">◆ FOUNDER COMMAND CENTER ◆</div>
+    <a href="index.html" class="back-link">← Exit to J.A.R.V.I.S</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div>Total Reminders</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-today">0</div><div>Today</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-users">0</div><div>Users</div></div>
+  </div>
+
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="task">Tasks</button>
+    <button class="filter-btn" data-filter="billing">Billing</button>
+    <button class="filter-btn" data-filter="birthday">Birthday</button>
+  </div>
+
+  <button class="copy-all-btn" id="copyAllBtn">📋 COPY ALL (WhatsApp ready)</button>
+
+  <div id="reminders-list"></div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'jarvis_reminders';
+  function getReminders() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  function setReminders(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+  let currentFilter = 'all';
+
+  // Generate WhatsApp message with Sir/Ma'am
+  function generateWhatsAppMessage(reminder) {
+    const honorific = reminder.userGender === 'Male' ? 'Sir' : (reminder.userGender === 'Female' ? 'Ma\'am' : '');
+    let cleanText = reminder.text.replace(/^remind me to/i, '').replace(/^remind me /i, '').trim();
+    cleanText = cleanText.charAt(0).toUpperCase() + cleanText.slice(1);
+    let timePart = '';
+    if (reminder.dueDate) {
+      const due = new Date(reminder.dueDate);
+      timePart = ` at ${due.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} on ${due.toLocaleDateString()}`;
+    }
+    if (honorific) {
+      return `${honorific}, you have asked me to remind you: ${cleanText}${timePart}.`;
+    } else {
+      return `Reminder for ${reminder.userNick}: ${cleanText}${timePart}.`;
+    }
+  }
+
+  // Full snippet with phone number included
+  function generateSnippet(reminder) {
+    const typeIcon = { task:'📋', billing:'💳', birthday:'🎂' }[reminder.type] || '🔔';
+    return `🔔 REMINDER\n👤 ${reminder.userNick} (${reminder.userName})\n📞 Phone: ${reminder.userPhone || 'Not provided'}\n📌 ${typeIcon} ${reminder.text}\n🏷️ Type: ${reminder.type}\n🌐 Language: ${reminder.lang || 'English'}\n🕐 Logged: ${new Date(reminder.ts).toLocaleString()}\n${reminder.dueDate ? `⏰ Due: ${new Date(reminder.dueDate).toLocaleString()}\n` : ''}✅ Please remind them via WhatsApp.`;
+  }
+
+  function renderAdmin() {
+    let reminders = getReminders();
+    if (currentFilter !== 'all') reminders = reminders.filter(r => r.type === currentFilter);
+    
+    const total = getReminders().length;
+    const today = new Date().toDateString();
+    const todayCount = getReminders().filter(r => new Date(r.ts).toDateString() === today).length;
+    const uniqueUsers = new Set(getReminders().map(r => r.userId)).size;
+    document.getElementById('stat-total').innerText = total;
+    document.getElementById('stat-today').innerText = todayCount;
+    document.getElementById('stat-users').innerText = uniqueUsers;
+
+    const container = document.getElementById('reminders-list');
+    if (reminders.length === 0) {
+      container.innerHTML = '<div class="empty-msg">◆ No reminders found in database ◆</div>';
+      return;
+    }
+
+    container.innerHTML = reminders.map(rem => {
+      const snippet = generateSnippet(rem);
+      const whatsMsg = generateWhatsAppMessage(rem);
+      return `
+        <div class="reminder-card" data-id="${rem.id}">
+          <div class="card-header">
+            <div class="user-info">👤 ${escapeHtml(rem.userNick)} (${escapeHtml(rem.userName)}) <span class="user-phone">📞 ${escapeHtml(rem.userPhone || '—')}</span></div>
+            <div class="badge">${rem.type.toUpperCase()}</div>
+          </div>
+          <div class="reminder-text">💬 ${escapeHtml(rem.text)}</div>
+          <div class="snippet-box" id="snip-${rem.id}">${escapeHtml(snippet)}</div>
+          <div class="whatsapp-box" id="wa-${rem.id}">📱 READY-TO-SEND:<br>${escapeHtml(whatsMsg)}</div>
+          <div class="card-footer">
+            <div><span class="badge">📅 ${rem.dueDate ? new Date(rem.dueDate).toLocaleString() : 'No due date'}</span> <span class="badge">🕒 ${new Date(rem.ts).toLocaleString()}</span></div>
+            <div>
+              <button class="btn-copy" onclick="copyToClipboard('wa-${rem.id}', this)">📋 Copy WhatsApp</button>
+              <button class="btn-copy" onclick="copyToClipboard('snip-${rem.id}', this)">📄 Copy Snippet</button>
+              <button class="btn-delete" onclick="deleteReminder('${rem.id}')">🗑️ Delete</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+
+  window.copyToClipboard = function(elementId, btn) {
+    const textElem = document.getElementById(elementId);
+    if (!textElem) return;
+    let rawText = textElem.innerText;
+    if (elementId.startsWith('wa-')) rawText = rawText.replace(/^📱 READY-TO-SEND:\s*/, '');
+    navigator.clipboard.writeText(rawText).then(() => {
+      const original = btn.innerText;
+      btn.innerText = '✓ Copied!';
+      setTimeout(() => btn.innerText = original, 1500);
+    });
+  };
+
+  window.deleteReminder = function(id) {
+    if (confirm('Delete this reminder permanently?')) {
+      let all = getReminders().filter(r => r.id !== id);
+      setReminders(all);
+      renderAdmin();
+    }
+  };
+
+  function copyAllWhatsApp() {
+    let reminders = getReminders();
+    if (currentFilter !== 'all') reminders = reminders.filter(r => r.type === currentFilter);
+    if (reminders.length === 0) { alert('No reminders to copy.'); return; }
+    const allMessages = reminders.map(r => generateWhatsAppMessage(r)).join('\n\n─────────────────\n\n');
+    navigator.clipboard.writeText(allMessages).then(() => alert(`Copied ${reminders.length} reminder(s) as WhatsApp messages.`));
+  }
+
+  // Filters
+  document.getElementById('filters').addEventListener('click', (e) => {
+    if (e.target.classList.contains('filter-btn')) {
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      e.target.classList.add('active');
+      currentFilter = e.target.dataset.filter;
+      renderAdmin();
+    }
+  });
+  document.getElementById('copyAllBtn').addEventListener('click', copyAllWhatsApp);
+
+  renderAdmin();
+  setInterval(renderAdmin, 3000);
+</script>
+</body>
+</html>

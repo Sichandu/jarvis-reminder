@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>J.A.R.V.I.S · Intelligent Reminder System</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-deep: #050b14;
+    --bg-panel: rgba(8, 18, 28, 0.85);
+    --cyan-core: #00e0ff;
+    --cyan-glow: rgba(0, 224, 255, 0.4);
+    --cyan-dim: rgba(0, 224, 255, 0.2);
+    --text-primary: #e0f2fe;
+    --text-secondary: #8ab3cf;
+    --danger: #ff3366;
+    --success: #00ffaa;
+    --gold: #ffcc44;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+  }
+
+  body {
+    background: radial-gradient(circle at 20% 30%, #0a111f, #03070f);
+    color: var(--text-primary);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    padding: var(--spacing-md);
+    position: relative;
+  }
+
+  /* HUD grid background */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0, 224, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 224, 255, 0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Scanning line */
+  body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent 50%, rgba(0, 224, 255, 0.02) 50%);
+    background-size: 100% 8px;
+    pointer-events: none;
+    animation: scan 12s linear infinite;
+    z-index: 0;
+  }
+
+  @keyframes scan {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 100%; }
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* Screens */
+  .screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 85vh;
+    gap: var(--spacing-lg);
+    animation: fadeIn 0.4s ease;
+    width: 100%;
+  }
+  .screen.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px);}
+    to { opacity: 1; transform: translateY(0);}
+  }
+
+  /* Typography */
+  .jarvis-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.8rem, 10vw, 4rem);
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    background: linear-gradient(135deg, #00e0ff, #0088aa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 15px var(--cyan-glow);
+    text-align: center;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .jarvis-sub {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    border-top: 1px solid var(--cyan-dim);
+    border-bottom: 1px solid var(--cyan-dim);
+    padding: var(--spacing-sm) 0;
+    width: 100%;
+    text-align: center;
+  }
+
+  .hex-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin: var(--spacing-sm) 0;
+  }
+  .hex-divider::before, .hex-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan-core), transparent);
+  }
+
+  /* Form elements */
+  .input-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .field-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--cyan-core);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-family: 'Orbitron', monospace;
+  }
+
+  .jarvis-input, select.jarvis-input {
+    width: 100%;
+    background: rgba(0, 20, 30, 0.7);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--cyan-dim);
+    border-bottom: 2px solid var(--cyan-core);
+    color: var(--text-primary);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1rem;
+    padding: 12px 16px;
+    outline: none;
+    border-radius: 8px;
+    transition: 0.2s;
+  }
+
+  .jarvis-input:focus, select.jarvis-input:focus {
+    border-color: var(--cyan-core);
+    box-shadow: 0 0 12px var(--cyan-glow);
+  }
+
+  .btn-primary {
+    background: transparent;
+    border: 1.5px solid var(--cyan-core);
+    color: var(--cyan-core);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    padding: 12px 24px;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-radius: 40px;
+    transition: 0.3s;
+    width: 100%;
+    text-align: center;
+    margin-top: var(--spacing-sm);
+  }
+  .btn-primary:hover {
+    background: var(--cyan-dim);
+    box-shadow: 0 0 20px var(--cyan-glow);
+  }
+
+  .link-founder {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    font-family: 'Orbitron', monospace;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: var(--spacing-md);
+  }
+
+  /* HUD Header */
+  .hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-panel);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--cyan-dim);
+    border-radius: 50px;
+    padding: 0.5rem 1.2rem;
+    margin-bottom: var(--spacing-lg);
+    width: 100%;
+  }
+  .hud-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--cyan-core);
+  }
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .user-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--cyan-dim);
+    border: 1px solid var(--cyan-core);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+  .user-info { text-align: right; line-height: 1.2; }
+  .user-name { font-size: 0.9rem; font-weight: 600; }
+  .user-nick { font-size: 0.65rem; color: var(--text-secondary); }
+
+  /* Widget */
+  .widget-panel {
+    background: var(--bg-panel);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--cyan-dim);
+    border-radius: 24px;
+    padding: var(--spacing-md) var(--spacing-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    width: 100%;
+  }
+  .datetime-box .date { font-size: 0.7rem; color: var(--text-secondary); }
+  .datetime-box .time { font-size: 1.6rem; font-family: 'Orbitron', monospace; color: var(--cyan-core); line-height: 1; }
+  .weather-box { text-align: right; }
+  .weather-icon { font-size: 1.8rem; }
+  .weather-temp { font-size: 0.9rem; font-family: 'Orbitron', monospace; color: var(--gold); }
+
+  /* Orb */
+  .orb-container {
+    position: relative;
+    width: min(200px, 45vw);
+    height: min(200px, 45vw);
+    margin: 0 auto var(--spacing-md);
+    cursor: pointer;
+  }
+  .orb-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid var(--cyan-dim);
+    animation: spin 10s linear infinite;
+  }
+  .orb-ring:nth-child(2) { inset: 12px; animation-duration: 14s; animation-direction: reverse; }
+  .orb-ring:nth-child(3) { inset: 24px; animation-duration: 18s; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .orb-core {
+    position: absolute;
+    inset: 30px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #00aacc, #05161f);
+    border: 2px solid var(--cyan-core);
+    box-shadow: 0 0 30px var(--cyan-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .orb-container.listening .orb-core {
+    animation: pulse 0.8s ease-in-out infinite;
+    border-color: var(--success);
+  }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .mic-icon { width: 48px; height: 48px; color: var(--cyan-core); }
+  .orb-label { text-align: center; font-size: 0.7rem; letter-spacing: 0.2em; margin-top: var(--spacing-sm); }
+
+  /* Language pills */
+  .lang-pills {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: var(--spacing-md) 0;
+    flex-wrap: wrap;
+  }
+  .lang-pill {
+    background: transparent;
+    border: 1px solid var(--cyan-dim);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .lang-pill.active, .lang-pill:hover {
+    border-color: var(--cyan-core);
+    color: var(--cyan-core);
+    background: var(--cyan-dim);
+  }
+
+  /* Transcript */
+  .transcript-box {
+    background: var(--bg-panel);
+    backdrop-filter: blur(8px);
+    border-left: 4px solid var(--cyan-core);
+    border-radius: 12px;
+    padding: var(--spacing-md);
+    margin: var(--spacing-sm) 0;
+    width: 100%;
+  }
+  .transcript-label { font-size: 0.6rem; letter-spacing: 0.2em; color: var(--cyan-core); }
+  .transcript-text { font-size: 1rem; margin-top: 6px; word-break: break-word; }
+
+  /* Action row */
+  .action-row {
+    display: flex;
+    gap: 12px;
+    margin: var(--spacing-sm) 0;
+    width: 100%;
+  }
+  .btn-action {
+    flex: 1;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--cyan-dim);
+    color: var(--text-primary);
+    padding: 10px;
+    border-radius: 40px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn-action.confirm { border-color: var(--success); color: var(--success); }
+  .btn-action:hover { background: var(--cyan-dim); border-color: var(--cyan-core); }
+
+  /* Due date selector */
+  .due-selector {
+    width: 100%;
+    background: rgba(0,20,30,0.8);
+    border: 1px solid var(--cyan-dim);
+    border-radius: 40px;
+    padding: 10px 14px;
+    margin: var(--spacing-sm) 0;
+    color: var(--text-primary);
+    font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+  }
+  .custom-date-container {
+    margin-top: var(--spacing-sm);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .custom-date-container input {
+    flex: 1;
+    background: rgba(0,20,30,0.8);
+    border: 1px solid var(--cyan-dim);
+    color: var(--text-primary);
+    padding: 10px 12px;
+    border-radius: 40px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* Manual form */
+  .manual-form {
+    display: none;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    background: var(--bg-panel);
+    padding: var(--spacing-lg);
+    border-radius: 24px;
+    margin: var(--spacing-md) 0;
+    width: 100%;
+  }
+  .manual-form.show { display: flex; }
+  .manual-form textarea, .manual-form select {
+    background: #07121c;
+    border: 1px solid var(--cyan-dim);
+    color: var(--text-primary);
+    padding: 12px;
+    border-radius: 16px;
+    font-family: 'Share Tech Mono', monospace;
+    width: 100%;
+  }
+  .manual-due-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  /* Reminders list */
+  .reminders-section {
+    margin-top: var(--spacing-xl);
+    width: 100%;
+  }
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--cyan-dim);
+    padding-bottom: 8px;
+    margin-bottom: var(--spacing-md);
+  }
+  .reminder-card {
+    background: var(--bg-panel);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--cyan-dim);
+    border-radius: 20px;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    transition: 0.2s;
+  }
+  .reminder-text { font-size: 0.95rem; margin-bottom: 8px; word-break: break-word; }
+  .reminder-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+  }
+  .btn-del {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin-top: 6px;
+    text-align: right;
+    width: 100%;
+  }
+  .empty-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary);
+    border: 1px dashed var(--cyan-dim);
+    border-radius: 24px;
+  }
+
+  /* Notification */
+  .notif {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0a1a24;
+    border: 1px solid var(--cyan-core);
+    padding: 8px 20px;
+    border-radius: 40px;
+    font-size: 0.8rem;
+    z-index: 200;
+    opacity: 0;
+    transition: 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 90vw;
+    text-align: center;
+  }
+  .notif.show { opacity: 1; bottom: 30px; }
+  .notif.success { border-color: var(--success); color: var(--success); }
+
+  /* Responsive fine-tuning */
+  @media (max-width: 640px) {
+    body { padding: var(--spacing-sm); }
+    .widget-panel { flex-direction: column; text-align: center; }
+    .weather-box { text-align: center; }
+    .datetime-box .time { font-size: 1.4rem; }
+    .action-row { flex-direction: column; }
+    .btn-action { width: 100%; }
+    .custom-date-container { flex-direction: column; }
+    .custom-date-container input { width: 100%; }
+    .manual-form { padding: var(--spacing-md); }
+    .jarvis-logo { letter-spacing: 0.15em; }
+    .hud-header { flex-wrap: wrap; justify-content: center; gap: 10px; text-align: center; }
+    .user-badge { justify-content: center; }
+  }
+
+  @media (min-width: 1024px) {
+    .container { max-width: 900px; }
+    .orb-container { width: 220px; height: 220px; }
+    .widget-panel { padding: var(--spacing-md) var(--spacing-xl); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- ONBOARDING -->
+  <div id="screen-onboard" class="screen active">
+    <div class="jarvis-logo">J.A.R.V.I.S</div>
+    <div class="jarvis-sub">Just A Rather Very Intelligent System</div>
+    <div class="hex-divider"><span>◆ NEURAL LINK ◆</span></div>
+    <div class="input-group">
+      <div><div class="field-label">Full Name</div><input class="jarvis-input" id="inp-name" placeholder="Tony Stark"></div>
+      <div><div class="field-label">Nickname</div><input class="jarvis-input" id="inp-nick" placeholder="Iron Man"></div>
+      <div><div class="field-label">Phone Number</div><input class="jarvis-input" id="inp-phone" type="tel" placeholder="+91 98765 43210"></div>
+      <div><div class="field-label">Gender</div><select class="jarvis-input" id="inp-gender"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
+      <div><div class="field-label">Primary Language</div><select class="jarvis-input" id="inp-lang"><option value="en-IN">English</option><option value="hi-IN">हिन्दी</option><option value="te-IN">తెలుగు</option></select></div>
+    </div>
+    <button class="btn-primary" onclick="initUser()">◆ ACTIVATE J.A.R.V.I.S ◆</button>
+    <button class="link-founder" onclick="window.location.href='founder.html'">🔐 Founder Access</button>
+  </div>
+
+  <!-- MAIN HUD -->
+  <div id="screen-main" class="screen">
+    <div class="hud-header">
+      <div class="hud-title">J.A.R.V.I.S</div>
+      <div class="user-badge">
+        <div class="user-info"><div class="user-name" id="display-nick">Agent</div><div class="user-nick" id="display-name"></div></div>
+        <div class="user-avatar" id="display-avatar">J</div>
+      </div>
+    </div>
+
+    <div class="widget-panel">
+      <div class="datetime-box"><div class="date" id="current-date">--</div><div class="time" id="current-time">--:--</div></div>
+      <div class="weather-box"><div class="weather-icon" id="weather-icon">🌡️</div><div class="weather-temp" id="weather-temp">--°C</div></div>
+    </div>
+
+    <div style="text-align:center; width:100%;">
+      <div class="orb-container" id="orb" onclick="toggleListening()">
+        <div class="orb-ring"></div><div class="orb-ring"></div><div class="orb-ring"></div>
+        <div class="orb-core"><svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0"/><line x1="12" y1="21" x2="12" y2="17"/></svg></div>
+      </div>
+      <div class="orb-label" id="orb-label">TAP TO SPEAK</div>
+    </div>
+
+    <div class="lang-pills">
+      <button class="lang-pill active" data-lang="en-IN" onclick="setLang(this)">EN</button>
+      <button class="lang-pill" data-lang="hi-IN" onclick="setLang(this)">हिंदी</button>
+      <button class="lang-pill" data-lang="te-IN" onclick="setLang(this)">తెలుగు</button>
+    </div>
+
+    <div class="transcript-box"><div class="transcript-label">VOICE INPUT</div><div class="transcript-text" id="transcript-text">Say your reminder...</div></div>
+    
+    <div id="due-date-container" style="display:none; width:100%;">
+      <select id="due-select" class="due-selector">
+        <option value="today">📅 Today</option>
+        <option value="tomorrow">📅 Tomorrow</option>
+        <option value="custom">📅 Custom Date</option>
+      </select>
+      <div id="custom-date-container" class="custom-date-container" style="display:none;">
+        <input type="date" id="custom-date" value="">
+        <input type="time" id="custom-time" value="12:00">
+      </div>
+    </div>
+    
+    <div class="action-row" id="action-row" style="display:none;"><button class="btn-action confirm" onclick="saveReminder()">✓ SAVE</button><button class="btn-action" onclick="clearTranscript()">✕ CLEAR</button></div>
+    
+    <button class="link-founder" onclick="toggleManual()" style="margin: var(--spacing-sm) auto;">+ MANUAL ENTRY</button>
+    <div class="manual-form" id="manual-form">
+      <textarea id="manual-text" placeholder="Type your reminder..." rows="3"></textarea>
+      <select id="manual-type"><option value="task">📋 Task</option><option value="billing">💳 Billing</option><option value="birthday">🎂 Birthday</option></select>
+      <div class="manual-due-group">
+        <select id="manual-due-select" class="due-selector">
+          <option value="today">📅 Today</option>
+          <option value="tomorrow">📅 Tomorrow</option>
+          <option value="custom">📅 Custom Date</option>
+        </select>
+        <div id="manual-custom-container" class="custom-date-container" style="display:none;">
+          <input type="date" id="manual-custom-date" value="">
+          <input type="time" id="manual-custom-time" value="12:00">
+        </div>
+      </div>
+      <div class="action-row"><button class="btn-action confirm" onclick="saveManual()">SAVE</button><button class="btn-action" onclick="toggleManual()">CANCEL</button></div>
+    </div>
+
+    <div class="reminders-section">
+      <div class="section-header"><div class="section-title">◆ MY REMINDERS</div><div id="reminder-count" style="font-size:0.7rem;">0</div></div>
+      <div id="reminder-list" class="reminder-list"></div>
+    </div>
+  </div>
+</div>
+<div id="notif" class="notif"></div>
+
+<script>
+  // ---------- STORAGE ----------
+  const STORAGE_KEY = 'jarvis_reminders';
+  const USER_KEY = 'jarvis_user';
+  function getReminders() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  function setReminders(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+  function getUser() { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); }
+  function setUser(u) { localStorage.setItem(USER_KEY, JSON.stringify(u)); }
+
+  let currentUser = null;
+  let currentLang = 'en-IN';
+  let recognition = null;
+  let isListening = false;
+  let currentTranscript = '';
+  let currentType = 'task';
+
+  // Helper: get due date ISO string from selector
+  function getDueDateFromSelector(selectId, dateId, timeId) {
+    const select = document.getElementById(selectId);
+    const val = select.value;
+    let dueDate = null;
+    const now = new Date();
+    if (val === 'today') {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      dueDate = today.toISOString();
+    } else if (val === 'tomorrow') {
+      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 59);
+      dueDate = tomorrow.toISOString();
+    } else if (val === 'custom') {
+      const dateStr = document.getElementById(dateId).value;
+      const timeStr = document.getElementById(timeId).value;
+      if (dateStr) {
+        const customDate = new Date(dateStr + 'T' + (timeStr || '12:00') + ':00');
+        if (!isNaN(customDate.getTime())) dueDate = customDate.toISOString();
+      }
+    }
+    return dueDate;
+  }
+
+  function setupDueSelector(selectId, containerId) {
+    const select = document.getElementById(selectId);
+    const container = document.getElementById(containerId);
+    const toggleCustom = () => {
+      container.style.display = select.value === 'custom' ? 'flex' : 'none';
+    };
+    select.addEventListener('change', toggleCustom);
+    toggleCustom();
+  }
+
+  function setupVoiceDueSelector() {
+    setupDueSelector('due-select', 'custom-date-container');
+  }
+
+  function setupManualDueSelector() {
+    setupDueSelector('manual-due-select', 'manual-custom-container');
+  }
+
+  function initUser() {
+    const name = document.getElementById('inp-name').value.trim();
+    const nick = document.getElementById('inp-nick').value.trim();
+    const phone = document.getElementById('inp-phone').value.trim();
+    const gender = document.getElementById('inp-gender').value;
+    const lang = document.getElementById('inp-lang').value;
+    if (!name || !nick || !phone) { showNotif('All fields required', 'error'); return; }
+    const user = { id: Date.now().toString(36), name, nick, phone, gender, lang };
+    setUser(user);
+    currentUser = user;
+    currentLang = lang;
+    showScreen('screen-main');
+    renderReminders();
+    startWeatherClock();
+    showNotif(`Welcome ${nick}. J.A.R.V.I.S online.`, 'success');
+  }
+
+  function applyUser(user) {
+    document.getElementById('display-name').innerText = user.name;
+    document.getElementById('display-nick').innerText = user.nick;
+    document.getElementById('display-avatar').innerText = user.nick[0].toUpperCase();
+    currentLang = user.lang;
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // Voice
+  function toggleListening() {
+    if (isListening) { recognition?.stop(); return; }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { showNotif("Speech not supported", "error"); return; }
+    recognition = new SpeechRecognition();
+    recognition.lang = currentLang;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.onstart = () => {
+      isListening = true;
+      document.getElementById('orb').classList.add('listening');
+      document.getElementById('orb-label').innerText = "LISTENING...";
+      setTranscript("", true);
+    };
+    recognition.onresult = (e) => {
+      let final = "";
+      for (let i = 0; i < e.results.length; i++) if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      if (final) currentTranscript = final;
+      setTranscript(currentTranscript);
+    };
+    recognition.onend = () => {
+      isListening = false;
+      document.getElementById('orb').classList.remove('listening');
+      document.getElementById('orb-label').innerText = "TAP TO SPEAK";
+      if (currentTranscript) {
+        document.getElementById('action-row').style.display = 'flex';
+        document.getElementById('due-date-container').style.display = 'block';
+        detectType(currentTranscript);
+        setupVoiceDueSelector();
+      }
+    };
+    recognition.start();
+  }
+
+  function setTranscript(text, listeningMode = false) {
+    const el = document.getElementById('transcript-text');
+    if (listeningMode) el.innerHTML = '<span style="opacity:0.7;">█</span>';
+    else el.innerText = text || "Say your reminder...";
+  }
+
+  function detectType(text) {
+    const t = text.toLowerCase();
+    if (/birthday|bday|పుట్టినరోజు|जन्मदिन/.test(t)) currentType = 'birthday';
+    else if (/bill|payment|due|బిల్|भुगतान/.test(t)) currentType = 'billing';
+    else currentType = 'task';
+  }
+
+  function clearTranscript() {
+    currentTranscript = '';
+    setTranscript('');
+    document.getElementById('action-row').style.display = 'none';
+    document.getElementById('due-date-container').style.display = 'none';
+  }
+
+  function saveReminder() {
+    if (!currentTranscript) return;
+    const dueDate = getDueDateFromSelector('due-select', 'custom-date', 'custom-time');
+    const user = getUser();
+    if (!user) return;
+    const reminder = {
+      id: Date.now().toString(36),
+      userId: user.id,
+      userName: user.name,
+      userNick: user.nick,
+      userGender: user.gender,
+      userPhone: user.phone,
+      text: currentTranscript,
+      type: currentType,
+      lang: currentLang,
+      ts: new Date().toISOString(),
+      dueDate: dueDate
+    };
+    let all = getReminders();
+    all.unshift(reminder);
+    setReminders(all);
+    
+    let feedback = "";
+    if (currentLang === 'hi-IN') feedback = "आपका रिमाइंडर सेट कर दिया है, अब तनाव लेने की कोई ज़रूरत नहीं।";
+    else if (currentLang === 'te-IN') feedback = "మీ రిమైండర్ సెట్ చేసాము, టెన్షన్ తీసుకోకండి.";
+    else feedback = "Your reminder has been set, no more stress.";
+    
+    const utterance = new SpeechSynthesisUtterance(feedback);
+    utterance.lang = currentLang === 'te-IN' ? 'te-IN' : (currentLang === 'hi-IN' ? 'hi-IN' : 'en-US');
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+    
+    showNotif("Reminder saved!", "success");
+    clearTranscript();
+    renderReminders();
+  }
+
+  function saveManual() {
+    const text = document.getElementById('manual-text').value.trim();
+    const type = document.getElementById('manual-type').value;
+    const dueDate = getDueDateFromSelector('manual-due-select', 'manual-custom-date', 'manual-custom-time');
+    if (!text) return;
+    const user = getUser();
+    if (!user) return;
+    const reminder = {
+      id: Date.now().toString(36),
+      userId: user.id,
+      userName: user.name,
+      userNick: user.nick,
+      userGender: user.gender,
+      userPhone: user.phone,
+      text, type, lang: currentLang,
+      ts: new Date().toISOString(),
+      dueDate: dueDate
+    };
+    let all = getReminders();
+    all.unshift(reminder);
+    setReminders(all);
+    showNotif("Manual reminder saved", "success");
+    document.getElementById('manual-text').value = '';
+    toggleManual();
+    renderReminders();
+  }
+
+  function renderReminders() {
+    const user = getUser();
+    if (!user) return;
+    const myReminders = getReminders().filter(r => r.userId === user.id);
+    const container = document.getElementById('reminder-list');
+    document.getElementById('reminder-count').innerText = myReminders.length;
+    if (myReminders.length === 0) {
+      container.innerHTML = '<div class="empty-state">⏺ No active reminders</div>';
+      return;
+    }
+    container.innerHTML = myReminders.map(r => `
+      <div class="reminder-card">
+        <div class="reminder-text">${escapeHtml(r.text)}</div>
+        <div class="reminder-meta">
+          <span>📌 ${r.type}</span>
+          ${r.dueDate ? `<span>⏰ Due: ${new Date(r.dueDate).toLocaleString()}</span>` : ''}
+          <span>🕒 ${new Date(r.ts).toLocaleString()}</span>
+        </div>
+        <button class="btn-del" onclick="deleteReminder('${r.id}')">✕ DELETE</button>
+      </div>
+    `).join('');
+  }
+
+  function deleteReminder(id) {
+    let all = getReminders().filter(r => r.id !== id);
+    setReminders(all);
+    renderReminders();
+  }
+
+  function toggleManual() {
+    const form = document.getElementById('manual-form');
+    form.classList.toggle('show');
+    if (form.classList.contains('show')) {
+      setupManualDueSelector();
+    }
+  }
+
+  function setLang(el) {
+    currentLang = el.dataset.lang;
+    document.querySelectorAll('.lang-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    if (recognition) recognition.lang = currentLang;
+  }
+
+  // Weather & Clock
+  function startWeatherClock() {
+    updateClock();
+    setInterval(updateClock, 1000);
+    fetchWeather();
+    setInterval(fetchWeather, 600000);
+  }
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('current-date').innerHTML = now.toLocaleDateString('en-IN', { weekday:'short', day:'2-digit', month:'short' });
+    document.getElementById('current-time').innerHTML = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+  async function fetchWeather() {
+    try {
+      const res = await fetch('https://wttr.in?format=%C+%t&lang=en');
+      const data = await res.text();
+      const parts = data.split(' ');
+      const condition = parts[0];
+      const temp = parts[1];
+      let icon = '☀️';
+      if (condition.includes('Rain')) icon = '🌧️';
+      else if (condition.includes('Cloud')) icon = '☁️';
+      document.getElementById('weather-icon').innerHTML = icon;
+      document.getElementById('weather-temp').innerHTML = temp || '24°C';
+    } catch(e) { document.getElementById('weather-temp').innerHTML = '🌡️ 26°C'; }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+  }
+
+  function showNotif(msg, type) {
+    const n = document.getElementById('notif');
+    n.innerText = msg;
+    n.className = 'notif ' + (type === 'success' ? 'success' : '');
+    n.classList.add('show');
+    setTimeout(() => n.classList.remove('show'), 2500);
+  }
+
+  window.onload = () => {
+    const u = getUser();
+    if (u) {
+      currentUser = u;
+      applyUser(u);
+      currentLang = u.lang;
+      showScreen('screen-main');
+      renderReminders();
+      startWeatherClock();
+    }
+    // Set default custom date to today
+    const today = new Date().toISOString().split('T')[0];
+    if (document.getElementById('custom-date')) document.getElementById('custom-date').value = today;
+    if (document.getElementById('manual-custom-date')) document.getElementById('manual-custom-date').value = today;
+  };
+</script>
+</body>
+</html>
